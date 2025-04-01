@@ -4,19 +4,19 @@ class Plateau:
         self.plateau = [None] * 51  
 
         #mise en place normal
-        # for i in range(1, 21):
-        #     self.plateau[i] = (1, False)
-        # for i in range(31, 51):
-        #     self.plateau[i] = (0, False)
+        for i in range(1, 21):
+            self.plateau[i] = (1, False)
+        for i in range(31, 51):
+            self.plateau[i] = (0, False)
         
         #mise en place test dame et deplacement 
-        self.plateau[5] = (1, False)  # Pion joueur 1
-        self.plateau[10] = (1, False)  # Pion joueur 1
-        self.plateau[15] = (0, False)  # Pion joueur 2
-        self.plateau[20] = (0, False)  # Pion joueur 2
+        # self.plateau[5] = (1, False)  # Pion joueur 1
+        # self.plateau[10] = (1, False)  # Pion joueur 1
+        # self.plateau[15] = (0, False)  # Pion joueur 2
+        # self.plateau[20] = (0, False)  # Pion joueur 2
 
-        self.plateau[25] = (1, True)  # Dame joueur 1
-        self.plateau[30] = (0, True)  # Dame joueur 2
+        # self.plateau[25] = (1, True)  # Dame joueur 1
+        # self.plateau[30] = (0, True)  # Dame joueur 2
 
     def __str__(self) -> str:
         return str(self.plateau)
@@ -143,7 +143,7 @@ class Plateau:
         for deplacement in baseDeplacements:
             if self.plateau[deplacement] == None:
                 res.append(deplacement)         
-        return res
+        return res #retourne les cases ou le pion peut se deplacer
     
     def deplacer(self, posPion: int, newPos: int):
         if newPos in self.deplacementsPossible(posPion) or newPos in self.deplacementDamesPossible(posPion)[0]:
@@ -282,5 +282,48 @@ class Plateau:
                 elif joueur == 0:
                     nombre_pions_joueur_2 += 1
         return nombre_pions_joueur_1, nombre_pions_joueur_2
+    
+    def deplacementIA(self,coup):
+        num_case = coup[0]
+        destination = coup[1]
+        elimination = coup[2]
+        pion,est_dame = self.plateau[num_case]
+        if est_dame:
+            if elimination:
+                self.cacheEliminations = []
+                eli= self.deplacementDamesPossible(num_case)[1]
+                self.eliminer(num_case, destination)
+                print("elimination dame", destination, num_case)
+            else:
+                self.deplacer(num_case, destination)
+                print("deplacement dame", destination, num_case)
+        else:
+            if elimination:
+                self.cacheEliminations = []
+                eli= self.eliminationsPossibles(num_case)
+                self.eliminer(num_case, destination)
+                print("elimination pion", destination, num_case)
+            else:
+                self.deplacer(num_case, destination)
+                print("deplacement pion", destination, num_case)
+            
+    def reset(self):
+        self.cacheEliminations = []
+        self.plateau = [None] * 51
+        #mise en place normal
+        for i in range(1, 21):
+            self.plateau[i] = (1, False)
+        for i in range(31, 51):
+            self.plateau[i] = (0, False)
+
+    def verifierVictoire(self,joueur):
+        # Vérifie si un joueur a gagné
+        joueur_1, joueur_2 = self.compteurPions()
+        if joueur_1 == 0 and joueur == 0:
+            return True
+        elif joueur_2 == 0 and joueur == 1:
+            return True
+        else:
+            return False
 
 
