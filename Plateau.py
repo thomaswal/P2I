@@ -1,7 +1,8 @@
 class Plateau:
     def __init__(self):
         self.cacheEliminations = []
-        self.plateau = [None] * 51  
+        self.plateau = [None] * 51
+        self.turn = 1  
 
         #mise en place normal
         for i in range(1, 21):
@@ -154,7 +155,7 @@ class Plateau:
             # transfo en dame
             if (newPos <6 and self.plateau[newPos][0] == 0) or (newPos > 45 and self.plateau[newPos][0] == 1):
                 self.plateau[newPos] = (self.plateau[newPos][0], True)
-                print("Dame !", newPos)
+                print("Dame en:", newPos)
 
 
     
@@ -167,7 +168,11 @@ class Plateau:
                     if elimination[0] == newPos:
                         self.plateau[elimination[1]] = None
                         self.cacheEliminations=[]
-                        break           
+                        break
+            # transfo en dame    
+            if (newPos <6 and self.plateau[newPos][0] == 0) or (newPos > 45 and self.plateau[newPos][0] == 1):
+                self.plateau[newPos] = (self.plateau[newPos][0], True)
+                print("Dame en:", newPos)       
 
     def getPlateau(self):
         return self.plateau
@@ -254,9 +259,7 @@ class Plateau:
                                 stop = True
                             else:
                                 eliminations = diag[i+1:]
-                                print(eliminations)
                                 kill=diag[i]
-                                print(kill)
                                 for j in range(len(eliminations)):
                                     if self.plateau[eliminations[j]] == None:
                                         eliminationsPossibles.append(eliminations[j])
@@ -326,4 +329,38 @@ class Plateau:
         else:
             return False
 
+    def liste_plateau(self):
+        res = []
+        for i in range(1, 51):
+            pion = self.plateau[i]
+            if pion is None:
+                res.append(0)
+            else:
+                joueur, est_dame = pion
+                valeur = 1 if joueur == 1 else -1
+                if est_dame:
+                    valeur *= 2
+                res.append(valeur)
+        return res  # Retourne une liste de 50 nombres
+
+    def coup_possible(self, tour):
+        coup_possible = []
+        for i in range(1, 51):
+            pion = self.plateau[i]
+            if pion is not None:
+                joueur, est_dame = pion
+                if joueur == tour:
+                    if est_dame:
+                        deplacement, elimination = self.deplacementDamesPossible(i)
+                    else:
+                        deplacement = self.deplacementsPossible(i)
+                        elimination = self.eliminationsPossibles(i)
+
+                    if elimination:
+                        for j in elimination:
+                            coup_possible.append((i, j, 1))
+                    if deplacement:
+                        for j in deplacement:
+                            coup_possible.append((i, j, 0))
+        return coup_possible
 
