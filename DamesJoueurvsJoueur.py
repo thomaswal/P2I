@@ -3,7 +3,7 @@ from Plateau import Plateau
 from IA_DQN import IA_DQN
 import time
 
-class GraphiquePlateau:
+class DamesJoueurvsJoueur:
     def __init__(self):
         self.plateau =Plateau()
         self.listeRect = []
@@ -332,7 +332,6 @@ class GraphiquePlateau:
         return self.plateau
     
 
-
-        
-
-window = GraphiquePlateau()
+    
+window = DamesJoueurvsJoueur()
+window.afficher_plateau()

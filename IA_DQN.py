@@ -10,17 +10,7 @@ from Plateau import Plateau
 
 class IA_DQN:
     def __init__(self, learning_rate=0.001, gamma=0.95, epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995, memory_size=10000):
-        """
-        Initialisation du modèle Deep Q-Learning pour le jeu de dames
-        
-        Args:
-            learning_rate: Taux d'apprentissage pour l'optimiseur
-            gamma: Facteur de réduction pour les récompenses futures
-            epsilon: Paramètre d'exploration (probabilité de choisir une action aléatoire)
-            epsilon_min: Valeur minimale d'epsilon
-            epsilon_decay: Facteur de décroissance d'epsilon après chaque action
-            memory_size: Taille de la mémoire de replay
-        """
+
         self.learning_rate = learning_rate
         self.gamma = gamma  # facteur de réduction pour les récompenses futures
         self.epsilon = epsilon  # paramètre d'exploration
@@ -32,19 +22,8 @@ class IA_DQN:
         self.update_target_model()
         
     def _build_model(self):
-        """
-        Construction du réseau de neurones pour le Deep Q-Learning
-        
-        Le réseau prend en entrée:
-        - L'état du plateau (50 cases jouables)
-        - L'action proposée (case départ, case arrivée, élimination)
-        
-        Et retourne la valeur Q prédite pour cette paire état-action
-        """
         # Entrée pour l'état du plateau (50 cases jouables)
         plateau_input = keras.Input(shape=(50,), name="plateau_input")
-        
-        # Entrée pour l'action (case départ, case arrivée, élimination)
         action_input = keras.Input(shape=(3,), name="action_input")
         
         # Traitement de l'état du plateau
@@ -78,16 +57,6 @@ class IA_DQN:
         self.memory.append((state, action, reward, next_state, done,joueur_actuel))
     
     def act(self, state, actions_valides):
-        """
-        Choisit une action selon la politique epsilon-greedy
-        
-        Args:
-            state: État actuel du plateau (liste de 50 éléments)
-            actions_valides: Liste des actions valides au format (case_depart, case_arrivee, elimination)
-            
-        Returns:
-            L'action choisie au format (case_depart, case_arrivee, elimination)
-        """
         if not actions_valides:
             return None  # Aucune action valide
         
@@ -98,7 +67,6 @@ class IA_DQN:
         # Exploitation: choisir l'action avec la plus grande valeur Q
         q_values = []
         
-        # Convertir l'état en format approprié pour le réseau
         state_array = self._preprocess_state(state)
         
         for action in actions_valides:
@@ -106,17 +74,11 @@ class IA_DQN:
             q_value = self.model.predict([state_array, action_array], verbose=0)[0][0]
             q_values.append((action, q_value))
         
-        # Trier par valeur Q décroissante et prendre la meilleure action
         q_values.sort(key=lambda x: x[1], reverse=True)
         return q_values[0][0]
     
     def replay(self, batch_size):
-        """
-        Entraîne le modèle en utilisant l'expérience replay
-        
-        Args:
-            batch_size: Taille du lot d'expériences à utiliser pour l'entraînement
-        """
+
         if len(self.memory) < batch_size:
             return
         
@@ -164,21 +126,11 @@ class IA_DQN:
             self.epsilon *= self.epsilon_decay
     
     def _preprocess_state(self, state):
-        """
-        Prétraite l'état du plateau pour le réseau neuronal
-        
-        Args:
-            state: Liste représentant le plateau (51 éléments, index 0 non utilisé)
-            
-        Returns:
-            Un tableau numpy de forme (1, 50) représentant les cases jouables
-        """
-        # Ignorer l'index 0 et convertir les tuples en valeurs numériques
         processed_state = np.zeros((1, 50))
         
         for i in range(1, 51):
             if state[i] is None:
-                processed_state[0, i-1] = 0  # Case vide
+                processed_state[0, i-1] = 0  
             else:
                 joueur, est_dame = state[i]
                 # Encodage: 1 pour pion joueur 1, 2 pour dame joueur 1, -1 pour pion joueur 0, -2 pour dame joueur 0
@@ -190,15 +142,6 @@ class IA_DQN:
         return processed_state
     
     def _get_actions_valides(self, state, joueur_actuel):
-        """
-        Obtient toutes les actions valides pour un état donné
-        
-        Args:
-            state: État du plateau
-            
-        Returns:
-            Liste des actions valides au format (case_depart, case_arrivee, elimination)
-        """
         # Créer un plateau temporaire pour calculer les actions valides
         plateau_temp = Plateau()
         plateau_temp.plateau = state.copy()
@@ -206,7 +149,6 @@ class IA_DQN:
         actions_valides = []
  
         
-        # Parcourir toutes les cases du plateau
         for i in range(1, 51):
             pion = plateau_temp.plateau[i]
             if pion is not None:
@@ -225,7 +167,7 @@ class IA_DQN:
                         for j in deplacement:
                             actions_valides.append((i, j, 0))
         
-        # Prioriser les éliminations (règle du jeu de dames)
+        # Prioriser les éliminations 
         eliminations_actions = [action for action in actions_valides if action[2] == 1]
         if eliminations_actions:
             return eliminations_actions
@@ -244,96 +186,74 @@ class IA_DQN:
 
 
 def train_self_play(episodes=1000, batch_size=32, target_update=10, save_interval=100, save_path="dames_dqn_model"):
-    """
-    Entraîne l'agent en le faisant jouer contre lui-même
+  
+    # Entraîne l'agent en le faisant jouer contre lui-même
     
-    Args:
-        episodes: Nombre d'épisodes d'entraînement
-        batch_size: Taille du lot pour l'apprentissage
-        target_update: Fréquence de mise à jour du modèle cible
-        save_interval: Fréquence de sauvegarde du modèle
-        save_path: Chemin de sauvegarde du modèle
-    """
-    # Créer le dossier de sauvegarde s'il n'existe pas
+
+    # Créer le dossier 
     if not os.path.exists(save_path):
         os.makedirs(save_path)
     
-    # Initialiser l'agent
+
     agent = IA_DQN()
     
-    # Historique des récompenses pour suivre les progrès
     rewards_history = []
     
     for episode in range(episodes):
-        # Initialiser le plateau
         plateau = Plateau()
         state = plateau.getPlateau()
         total_reward = 0
         done = False
-        turn = 1  # Commencer avec le joueur 1
-        
-        # Compteur de coups sans capture
+        turn = 1  
         no_capture_count = 0
         
         while not done:
-            # Obtenir les actions valides pour le joueur actuel
             actions_valides = agent._get_actions_valides(state,turn)
             
             if not actions_valides:
-                # Si aucune action valide, le joueur actuel a perdu
                 reward = -10 if turn == 1 else 10
                 done = True
             else:
-                # Choisir une action
                 action = agent.act(state, actions_valides)
                 
-                # Exécuter l'action
                 plateau.deplacementIA(action)
                 
-                # Obtenir le nouvel état
                 next_state = plateau.getPlateau()
                 
-                # Vérifier si le jeu est terminé
                 if plateau.verifierVictoire(turn):
                     reward = 10 if turn == 1 else -10
                     done = True
                 else:
                     # Récompense basée sur la capture
-                    if action[2] == 1:  # Si c'est une élimination
+                    if action[2] == 1:  
                         reward = 1 if turn == 1 else -1
                         no_capture_count = 0
                     else:
                         reward = 0.1 if turn == 1 else -0.1
                         no_capture_count += 1
                 
-                # Vérifier s'il y a match nul (trop de coups sans capture)
                 if no_capture_count >= 50:
                     reward = 0
                     done = True
                 
-                # Stocker l'expérience dans la mémoire
+                # stocker l'expérience 
                 agent.remember(state, action, reward, next_state, done,joueur_actuel=turn)
-                
-                
-                # Mettre à jour l'état
                 state = next_state
                 total_reward += reward
                 
-                # Changer de joueur
                 turn = 1 - turn
             
-            # Entraîner l'agent
+            # entraîner l'agent
             agent.replay(batch_size)
         
-        # Mettre à jour le modèle cible périodiquement
         if episode % target_update == 0:
             agent.update_target_model()
         
-        # Sauvegarder le modèle périodiquement
+        # sauvegarder le modèle périodiquement
         if episode % save_interval == 0:
             agent.save(f"{save_path}/model_episode_{episode}.h5")
         
-        # Enregistrer la récompense totale
+        # enregistrer la récompense totale
         rewards_history.append(total_reward)
         
         # Afficher les progrès
@@ -353,44 +273,4 @@ def train_self_play(episodes=1000, batch_size=32, target_update=10, save_interva
     return agent
 
 
-def play_game(agent, human_player=True):
-    """
-    Joue une partie contre l'agent ou fait jouer l'agent contre lui-même
-    
-    Args:
-        agent: Agent IA_DQN entraîné
-        human_player: Si True, l'utilisateur joue contre l'agent, sinon l'agent joue contre lui-même
-    """
-    from GraphiquePlateau import GraphiquePlateau
-    
-    # Initialiser le plateau graphique
-    graphique_plateau = GraphiquePlateau()
-    plateau = graphique_plateau.get_plateau()
-    
-    # Afficher le plateau
-    if human_player:
-        graphique_plateau.afficher_plateau()
-    else:
-        # Mode IA vs IA (pour démonstration)
-        state = plateau.getPlateau()
-        turn = 1  # Commencer avec le joueur 1
-        
-        while True:
-            # Obtenir les actions valides pour le joueur actuel
-            actions_valides = agent._get_actions_valides(state)
-            
-            if not actions_valides or plateau.verifierVictoire(turn):
-                break
-            
-            # Choisir une action
-            action = agent.act(state, actions_valides)
-            
-            # Exécuter l'action
-            plateau.deplacementIA(action)
-            
-            # Mettre à jour l'affichage
-            graphique_plateau.actualiser_affichage()
-            
-            # Obtenir le nouvel état
-            state = plateau.getPlateau()
 
